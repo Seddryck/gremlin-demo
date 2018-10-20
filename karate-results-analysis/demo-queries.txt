@@ -1,0 +1,65 @@
+﻿========SELECT
+g.V().hasLabel("bouts")
+g.V().hasLabel("karateka")
+g.V().hasId("karateka.1")
+g.V("karateka.1")
+g.V().has("karateka", "fullName", "Ch. A.")
+g.V().has("karateka", "fullName", within(["Ch. A.", "Ch. C."]))
+
+
+========JOIN========
+g.V().hasId("karateka.1").outE("participates")
+g.V().hasId("karateka.1").outE("participates").inV().hasLabel("bout")
+g.V().hasId("karateka.1").out("participates").hasLabel("bout")
+g.V().hasId("karateka.1").out("loses")
+g.V().hasId("karateka.1").out("loses").in("wins")
+g.V().hasId("karateka.1").out("loses").in("wins").values("fullName")
+g.V().hasId("karateka.1").out("loses").in("wins").out("loses").in("wins")
+g.V().hasId("karateka.1").out("loses").in("wins").out("loses").in("wins").values("fullName")
+g.V().has("fullName", "Ag. E.").out("loses").in("wins").values("fullName")
+
+
+========Step Modulator========
+g.V().has("fullName", "Fr. J.").out("participates").in("participates").has("fullName", "Ve. M.")
+g.V().has("fullName", "Fr. J.").out("participates").as("bouts").in("participates").has("fullName", "Ve. M.").select("bouts")
+g.V().has("fullName", "Ag. E.").as("loser").out("loses").in("wins").as("winner").select("loser", "winner")
+g.V().has("fullName", "Ag. E.").as("loser").out("loses").in("wins").as("winner").select("winner", "loser").by("fullName")
+
+
+========Filtering========
+g.V().where(out("wins").count().is(gt(3))).as("loser").out("loses").in("wins").as("winner").select("winner", "loser").by("fullName")
+g.V().where(__.in("participates").has("fullName", "Ve. M.").and().in("participates").has("fullName", "Fr. J."))
+g.V().as("k1").out("participates").in("participates").as("k2").select("k1", "k2")
+g.V().as("k1").out("participates").in("participates").where(neq("k1")).as("k2").select("k1", "k2")
+g.V().as("k1").out("participates").in("participates").where(lt("k1")).as("k2").select("k1", "k2").by("fullName").count()
+g.V().as("k1").out("participates").in("participates").where(lt("k1")).as("k2").select("k1", "k2").by("fullName").dedup().count()
+g.V().as("k1").out("wins").in("loses").as("k2").where(lt("k1")).out("wins").in("loses").as("k3").where(eq("k1")).select("k1", "k2").by("fullName")
+
+
+========Projection========
+g.V().hasLabel("karateka").Project("name", "#loses").by("fullName").by(out("loses").count())
+g.V().hasLabel("karateka").Project("name", "#finalWinners").by("fullName").by(out("wins").out("belongs to").hasLabel("round").has("name","Final").count())
+g.V().hasLabel("karateka").Project("name", "#finalWinners").by("fullName").by(out("wins").out("belongs to").hasLabel("round").has("name","Final").count()).where(select("#winners").is(gt(0)))
+g.V().hasLabel("karateka").Project("name", "#tournaments").by("fullName").by(out("participates").out("belongs to").hasLabel("tournament").dedup().count())
+g.V().hasLabel("karateka").Project("name", "#tournament", "#finalWinners", "#wins", "#loses").by("fullName").by(out("participates").out("belongs to").hasLabel("tournament").dedup().count()).by(out("wins").out("belongs to").hasLabel("round").has("name","Final").count()).by(out("wins").count()).by(out("loses").count())
+g.V().hasLabel("karateka").Project("name", "#wins", "#loses").by("fullName").by(out("wins").count()).by(out("loses").count()).order().by(select("#wins"), decr).by(select("#loses")).where(select("#wins").is(gt(4)))
+
+
+========REPEAT/CYCLE========
+g.V("karateka.1").as("a").repeat(out("wins").in("loses")).times(3).where(eq("a")).path()
+g.V("karateka.15").as("a").repeat(out("wins").in("loses")).times(3).where(eq("a")).count()
+g.V().as("a").repeat(out("wins").in("loses")).times(3).where(eq("a")).path().dedup().by(unfold().order().by(id).dedup().fold())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
